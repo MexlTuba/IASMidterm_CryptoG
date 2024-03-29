@@ -8,17 +8,17 @@ def encrypt(plaintext, key):
     key_order = sorted(list(key))
     key_sequence = []
     
-    print(key_order)
-    print(key_sequence)
+    # print(key_order)
+    # print(key_sequence)
     
     for char in key:
-        # take index from base key, not sorted key
+        # take index from original/base key, not sorted key
         index = key_order.index(char)
         key_sequence.append(index)
         key_order[index] = "/"  # Replace used char to handle repeats correctly
         
-        print(key_order)
-        print(key_sequence)
+        # print(key_order)
+        # print(key_sequence)
     
     # Create the grid for plaintext input
     columns = len(key)
@@ -41,11 +41,61 @@ def encrypt(plaintext, key):
         for col in [i for i, x in enumerate(key_sequence) if x == num]: 
         #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0.
             print([i for i, x in enumerate(key_sequence) if x == num])
-            for row in range(rows): #read all rows from selected column, write into encrypted_text
+            for row in range(rows): #read all rows from selected column, write into "encrypted_text"
                 encrypted_text += grid[row][col]
     
     return encrypted_text
 
-def decrypt(message, key):
-    # Placeholder for decryption logic
-    return "Decrypted with Vigenere: " + message
+def decrypt(ciphertext, key):
+    # Remove spaces from key and plaintext for uniformity, convert to uppercase
+    key = key.replace(" ", "").upper()
+    ciphertext = ciphertext.replace(" ", "").upper()
+    
+    # Convert key to numbers based on alphabetical order, considering repeating characters like "T" in "test"
+    # Sort first, sorted list determines left to right key sequence integer
+    key_order = sorted(list(key))
+    key_sequence = []
+    
+    # print(key_order)
+    # print(key_sequence)
+    
+    for char in key:
+        # take index from original/base key, not sorted key
+        index = key_order.index(char)
+        key_sequence.append(index)
+        key_order[index] = "/"  # Replace used char to handle repeats correctly
+        
+        # print(key_order)
+        # print(key_sequence)
+    
+    # Calculate the number of rows needed for the grid
+    columns = len(key)
+    rows = len(ciphertext) // columns
+    
+    # Create an empty grid with the correct dimensions
+    grid = [['' for _ in range(columns)] for _ in range(rows)]
+    
+    # Populate the grid column by column according to key sequence
+    # Calculate the length of each column in the ciphertext
+    # This step is essential because the last row might not be completely filled.
+    # python's extended slice syntax :)), every column-th character starting from i ex: "ewdloxhollrx" 0::4 is "eol" = length 3
+    col_lengths = [len(ciphertext[i::columns]) for i in range(columns)]
+    # print(columns)
+    # print(col_lengths)
+    # Populate the grid column by column
+    start = 0
+    for num in sorted(set(key_sequence)):
+        for col in [i for i, x in enumerate(key_sequence) if x == num]:
+            #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0.
+            # Fill each column in the grid with the corresponding part of the ciphertext.
+            # The range is determined by how many characters should be in each column.
+            for row in range(rows):
+                # Check to ensure we don't try to access beyond the ciphertext's length
+                if row < col_lengths[col]:
+                    grid[row][col] = ciphertext[start]
+                    start += 1  # Move to the next character in the ciphertext
+    
+    # Read off the grid row by row to get the decrypted text
+    decrypted_text = "".join(["".join(row) for row in grid])
+    
+    return decrypted_text

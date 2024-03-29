@@ -3,5 +3,9 @@
         "ciphertext",
         "vigenere",
         "Vigenere"
-    ]
+    ],
+    "editor.tokenColorCustomizations": {
+        "comments": "",
+        "textMateRules": []
+    }
 }
