@@ -17,17 +17,23 @@ def main_menu():
 
         if choice == "1":
             cipher_menu("Vigenere Cipher", vigenere_encrypt, vigenere_decrypt)
+            
         elif choice == "2":
             cipher_menu("Columnar Cipher", columnar_encrypt, columnar_decrypt)
+            
         elif choice == "3":
             cipher_menu("AES", aes_encrypt, aes_decrypt)
+            
         elif choice == "4":
             cipher_menu("DES", des_encrypt, des_decrypt)
+            
         elif choice == "5":
             cipher_menu("RC4", rc4_encrypt, rc4_decrypt)
+            
         elif choice == "6":
             print("Exiting...")
             break
+        
         else:
             print("Invalid choice, please try again.")
 
@@ -43,12 +49,15 @@ def cipher_menu(cipher_name, encrypt_func, decrypt_func):
             message = input("Enter message to encrypt: ")
             key = input("Enter key: ")
             print("Encrypted message:", encrypt_func(message, key))
+            
         elif choice == "2":
             message = input("Enter message to decrypt: ")
             key = input("Enter key: ")
             print("Decrypted message:", decrypt_func(message, key))
+            
         elif choice == "3":
             return
+        
         else:
             print("Invalid choice, please try again.")
 
