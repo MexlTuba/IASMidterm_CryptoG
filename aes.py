@@ -1,4 +1,5 @@
 import base64
+import re
 
 #* AES-128 Constants
 Nb = 4  #* Block Size in words (32-bits)
@@ -237,11 +238,22 @@ def decrypt(encrypted, key):
     if len(key) != 16:
         return "Key must be exactly 16 bytes (128 bits) long.", False
     
-    if isinstance(encrypted, str):
-        encrypted = base64.b64decode(encrypted)
+    #* Encrypted Message Validation
+    try:
+        #* Check if encrypted input is a properly padded base64 string using regex
+        if isinstance(encrypted, str) and re.match('^[A-Za-z0-9+/]+={0,2}$', encrypted) and len(encrypted) % 4 == 0: 
+            encrypted = base64.b64decode(encrypted)
+        else:
+            return "Invalid base64 encoded string.", False
         
-    decrypted = decrypt_ecb(encrypted, key)
-    
-    return decrypted.decode('utf-8'), True
+    except Exception as e:
+        return f"Decoding error: {str(e)}", False
+
+    #* Continue with Decryption
+    try:
+        decrypted = decrypt_ecb(encrypted, key)
+        return decrypted.decode('utf-8'), True
+    except Exception as e:
+        return f"Decryption error: {str(e)}", False
 
 #*####################################################################################*#
