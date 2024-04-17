@@ -5,7 +5,7 @@ def encrypt(plaintext, key):
     key = key.upper()
     plaintext = plaintext.upper() 
     
-    key_as_int = [ord(i) - ord('A') for i in key]  # Normalize key: A=0, B=1, ...
+    key_as_int = [ord(i) - ord('A') for i in key]  # Normalize key: A=0, B=1, C=2...
 
     for char in plaintext:
         if char.isalpha():  # Encrypt ONLY alphabetic characters!!!
@@ -19,7 +19,7 @@ def encrypt(plaintext, key):
             encrypted_text += encrypted_char
             key_index += 1  # Advance key index ONLY if char was alphabetic!!!
         else:
-            encrypted_text += char  # Non-alphabetic characters are appended as is
+            encrypted_text += char  # Non-alphabetic characters (like spaces) are appended as is
 
     return encrypted_text
 
