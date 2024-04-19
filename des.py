@@ -211,6 +211,11 @@ def des_decrypt_block(block, keys):
     return decrypted_block
 
 def encrypt(plaintext, key):
+    # Validate key length
+    while len(key) < 1 or len(key) > 8:
+        print("Error: Key must be between 1 and 8 bytes (8 to 64 bits) long.")
+        key = input("Enter key (1 to 8 bytes): ")
+
     keys = generate_keys(key)
     plaintext_binary = ''.join(format(ord(char), '08b') for char in plaintext)
     # Padding the plaintext to make its length a multiple of 64
