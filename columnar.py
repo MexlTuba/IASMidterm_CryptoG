@@ -17,12 +17,13 @@ def encrypt(plaintext, key):
         key_sequence.append(index)
         key_order[index] = "/"  # Replace used char to handle repeats correctly
         
+        # print("------")
         # print(key_order)
         # print(key_sequence)
     
     # Create the grid for plaintext input
     columns = len(key)
-    # "//"" is floor division or round down, if plaintext length / columns = 0, add 1 else 0
+    # "//"" is floor division or round down, if plaintext length / columns = 0, add 1 else 0 ex: 10 / 4 = 2.5 | since 10 mod 4 = 2, add 1 so 3 rows total ang grid
     rows = len(plaintext) // columns + (1 if len(plaintext) % columns else 0)
     grid = [['X' for _ in range(columns)] for _ in range(rows)]  # Fill with placeholder 'X' for all empty cells
     # print(grid)
@@ -39,8 +40,8 @@ def encrypt(plaintext, key):
     encrypted_text = ""
     for num in sorted(set(key_sequence)): #sorts the new key sequence set [2 0 1 3] becomes [0 1 2 3] so that left to right starts from 0
         for col in [i for i, x in enumerate(key_sequence) if x == num]: 
-        #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0.
-            print([i for i, x in enumerate(key_sequence) if x == num])
+        #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0. NEED TO READ 0 FIRST
+            # print([i for i, x in enumerate(key_sequence) if x == num])
             for row in range(rows): #read all rows from selected column, write into "encrypted_text"
                 encrypted_text += grid[row][col]
     
@@ -78,15 +79,18 @@ def decrypt(ciphertext, key):
     # Populate the grid column by column according to key sequence
     # Calculate the length of each column in the ciphertext
     # This step is essential because the last row might not be completely filled.
-    # python's extended slice syntax :)), every column-th character starting from i ex: "ewdloxhollrx" 0::4 is "eol" = length 3
+    # python's extended slice syntax :), every column-th character starting from i ex: "EwdlOxhoLlrx" 0::4 is "eol" = length 3, EACH COLUMN 3 ROWS
     col_lengths = [len(ciphertext[i::columns]) for i in range(columns)]
+    # each column then has 3 rows in the example
+    
     # print(columns)
     # print(col_lengths)
+    
     # Populate the grid column by column
     start = 0
-    for num in sorted(set(key_sequence)):
+    for num in sorted(set(key_sequence)): #sorts the new key sequence set [2 0 1 3] becomes [0 1 2 3] so that left to right starts from 0
         for col in [i for i, x in enumerate(key_sequence) if x == num]:
-            #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0.
+            #For each index-value pair produced by enumerating key_sequence, include the index# (i) in a new LIST for columns that should be read next if the value (x) matches the current num. Here, first column to be read "0" is at index 1 so i = 1, x = 0. NEED TO READ 0 FIRST
             # Fill each column in the grid with the corresponding part of the ciphertext.
             # The range is determined by how many characters should be in each column.
             for row in range(rows):

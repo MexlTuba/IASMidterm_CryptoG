@@ -5,8 +5,11 @@ from des import encrypt as des_encrypt, decrypt as des_decrypt
 from rc4 import encrypt as rc4_encrypt, decrypt as rc4_decrypt
 
 def main_menu():
+    print("\nIAS 2 Midterm Group Output")
+    print("by Berame, Ceniza, Tuba")
+    print("BSIT - 3")
     while True:
-        print("\nMain Menu")
+        print("\nChoose an Encryption/Decryption Algorithm:\n")
         print("1. Vigenere Cipher (PolyAlphabetic - Substitution)")
         print("2. Columnar Cipher (Transposition)")
         print("3. AES")
@@ -33,7 +36,7 @@ def main_menu():
         elif choice == "6":
             print("Exiting...")
             break
-        
+            
         else:
             print("Invalid choice, please try again.")
 

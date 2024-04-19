@@ -5,8 +5,9 @@ def encrypt(plaintext, key):
     key = key.upper()
     plaintext = plaintext.upper() 
     
-    key_as_int = [ord(i) - ord('A') for i in key]  # Normalize key: A=0, B=1, C=2...
-
+    key_as_int = [ord(i) - ord('A') for i in key]  # Normalize key: A=0, B=1, C=2... using Unicode Decimal instead of assigning manually to each letter A-Z
+    # print(key_as_int)
+    # print(ord("H"))
     for char in plaintext:
         if char.isalpha():  # Encrypt ONLY alphabetic characters!!!
             char_code = ord(char) - ord('A')
@@ -15,7 +16,7 @@ def encrypt(plaintext, key):
             value = (char_code + key_as_int[key_index % key_length]) % 26
             # (%)modulo key_length so that it repeats back to first char when key is shorter than plaintext ex: 4%4 = 0
             encrypted_char = chr(value + ord('A'))
-            #adding "+ 65" via ord('A') to convert back to Uppercase ASCII
+            #adding "+ 65" via ord('A') to convert back to Uppercase Unicode
             encrypted_text += encrypted_char
             key_index += 1  # Advance key index ONLY if char was alphabetic!!!
         else:
