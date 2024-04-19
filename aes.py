@@ -1,12 +1,10 @@
 import base64
 import re
 
-#* AES-128 Constants
-Nb = 4  #* Block Size in words (32-bits)
-Nk = 4  #* Key Length in words (32-bits)
-Nr = 10  #* Number of Rounds
+Nb = 4 #* Number of Columns
+Nk = 4 #* Key Length
+Nr = 10
 
-#* (16x16) Substitution Box
 SBOX = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76, 
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -26,39 +24,38 @@ SBOX = [
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]
 
-#* Inverted Substitution Box
 INV_SBOX = [0] * 256
 for i in range(256):
-    INV_SBOX[SBOX[i]] = i #* since SBOX[x] = y, then INV_SBOX[y] = x
+    INV_SBOX[SBOX[i]] = i #* Since SBOX[x] = y, then INV_SBOX[y] = x
     
-#* Round constant, used in the key expansion phase of AES
+#* Round Constant
 Rcon = [
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36
 ]
 
 #* Perform multiplication by x (polynomial of x) in GF(2^8)
 def xtime(a): #* Polynomials: Module x^8 + x^4 + x^3 + x +1
-    return ((a << 1) ^ 0x1B if a & 0x80 else a << 1) & 0xFF #* Checks if the MSB (most significant bit) of `a` is set. To ensure the result stays within the 8-bit limit. 
+    return ((a << 1) ^ 0x1B if a & 0x80 else a << 1) & 0xFF #* Check if the MSB of `a` is within the bounds of the GF(2^8), if not reduce it within the bounds of GF(2^8)
 
-#* Perform multiplication in GF(2^8).
+#* Perform Multiplication in GF(2^8).
 def gf_multiply(a, b):
     result = 0
     
-    for _ in range(8): #* 8 bits of `a` and `b`. one bit of `b`, multiplying it by `a`
-        if b & 1: #* Check LSB (least significant bit) of `b` 
-            result ^= a #* `a` (multiplied by the corresponding power of `x`) is XORed with the result.
+    for _ in range(8):
+        if b & 1: #* Check LSB of `b` 
+            result ^= a #* `a` is XORed with the result.
             
-        a = xtime(a) #* Multiply `a` by `x`, preparing it for the next bit of `b`, as needed by the polynomial multiplication algorithm in GF(2^8)
-        b >>= 1 #* Shift `b` one bit to the right, discarding the LSB processed in this iteration.
+        a = xtime(a) #* Multiply `a` by `x`
+        b >>= 1 #* Shift `b` one bit to the right.
         
     return result
 
 #* Pair each byte in the `state` with the byte in the `round_key`
 def add_round_key(state, round_key):
-    return [s ^ rk for s, rk in zip(state, round_key)] #* (s ^ rk) Computes the XOR of each pair of bytes (`s` from `state` and `rk`)
+    return [s ^ rk for s, rk in zip(state, round_key)] #* XOR first elements of state and round key.
 
-#* Apply SubBytes to a 32-bit word.
-def substitute_word(word):
+#* Apply SubBytes
+def substitute_bytes(word):
     return [SBOX[b] for b in word] #* Get the corresponding value in `SBOX`, and create a new list with the substituted values
 
 #* Rotate Word
@@ -73,36 +70,32 @@ def key_expansion(key):
         temp = key_symbols[-1] #* Retrieve the last element
         
         if len(key_symbols) % Nk == 0:
-            temp_rotated = rotate_word(temp) #* Apply byte-wise left rotation
-            temp_sub = substitute_word(temp_rotated) #* Apply word substitution based on the value in the SBOX
+            temp_rotated = rotate_word(temp)
+            temp_sub = substitute_bytes(temp_rotated)
             temp_sub[0] ^= Rcon[len(key_symbols) // Nk - 1] #* XOR the first byte of the substituted word with a value from the Rcon
-            temp = temp_sub #* Reassign
+            temp = temp_sub
             
         key_symbols.append([a ^ b for a, b in zip(key_symbols[-Nk], temp)]) #* XOR temp with the word `Nk` positions before it in key list, then append result to the key list. 
-        #* Repeat until key list has exanded.
+        #* Repeat until key list has expanded.
         
-    return [item for sublist in key_symbols for item in sublist] #* Flatten into a single list of bytes, to be used in the encryption rounds (Conceptually the same as flatMap in JS)
+    return [item for sublist in key_symbols for item in sublist] #* Flatten into a single list of bytes, to be used in the encryption rounds (the same as flatMap in JS)
 
 #*################################ Encryption Logic ##################################*#
 
-def pad_message(message): #* Apply PKCS #7 padding to ensure the message length is a multiple of 16 bytes.
+def pad_message(message):
     padding_len = 16 - (len(message) % 16) #* Calculate padding length required to make the message length a multiple of 16 bytes
     padding = bytes([padding_len] * padding_len) #* Construct a list where `padding_len` is repeated `padding_len` times, convert list into a `bytes` object
-    return message + padding #* Add padding to the end of the message
+    return message + padding
 
 def mix_columns(state): #* MixColumns using GF(2^8) multiplication.
     for i in range(4):
-        col = state[i * 4:(i + 1) * 4] #* (4x4 Matrix of Bytes) Extract the current column from the state, extract one column at a time.
+        col = state[i * 4:(i + 1) * 4] #* Extract the current column from the state, extract one column at a time.
         state[i*4] = gf_multiply(0x02, col[0]) ^ gf_multiply(0x03, col[1]) ^ col[2] ^ col[3] #* Reassign the value of each byte in the column based on the GF(2^8) multiplication
         state[i*4+1] = col[0] ^ gf_multiply(0x02, col[1]) ^ gf_multiply(0x03, col[2]) ^ col[3]
         state[i*4+2] = col[0] ^ col[1] ^ gf_multiply(0x02, col[2]) ^ gf_multiply(0x03, col[3])
         state[i*4+3] = gf_multiply(0x03, col[0]) ^ col[1] ^ col[2] ^ gf_multiply(0x02, col[3])
         
     return state
-
- #* Apply SubBytes to the state
-def substitute_bytes(state):
-    return [SBOX[b] for b in state] #* Iterate over each byte `b` in the `state`, each byte value `b` is used as an index into the SBOX to retrieve a new byte value
 
 def shift_rows(state):
     return [
@@ -111,24 +104,24 @@ def shift_rows(state):
         state[8], state[13], state[2], state[7], #* Third row (two left shifts)
         state[12], state[1], state[6], state[11], #* Fourth row (three left shifts)
     ]
- 
+
 def aes_encrypt(plaintext_bytes, key):
     state = list(plaintext_bytes) #* Convert into a list (state matrix)
     expanded_key = key_expansion(key) #* Expand into multiple round keys 
 
     #* Initial round key addition
-    state = add_round_key(state, expanded_key[:16]) #* XOR the first 16 bytes of the expanded key with the state matrix
+    state = add_round_key(state, expanded_key[:16]) #* Add the first 16 bytes of the expanded key with the state matrix
 
     #* Main rounds
     for i in range(1, 10): #* 1 to 9 Main Rounds
-        state = substitute_bytes(state) #* Substitute Bytes
-        state = shift_rows(state) #* Shift Rows
-        state = mix_columns(state) #* Mix Columns
+        state = substitute_bytes(state)
+        state = shift_rows(state)
+        state = mix_columns(state)
         state = add_round_key(state, expanded_key[i * 16:(i + 1) * 16]) #* Selects the specific 16-byte segment of the expanded key to be used as the round key for the current round
 
     #* Final round (without MixColumns)
-    state = substitute_bytes(state) #* Substitute Bytes
-    state = shift_rows(state) #* Shift Rows
+    state = substitute_bytes(state)
+    state = shift_rows(state)
     state = add_round_key(state, expanded_key[160:176]) #* Use the 160th to the 175th position in the expanded key array
 
     return bytes(state)
@@ -149,7 +142,7 @@ def encrypt(message, key):
     if isinstance(key, str):
         key = key.encode()
     if len(key) != 16:
-        return "Key must be exactly 16 bytes (128 bits) long.", False
+        return "Error! Key must be exactly 16 bytes (128 bits) long."
     
     #* Make sure the message is in bytes format
     if isinstance(message, str):
@@ -157,17 +150,13 @@ def encrypt(message, key):
         
     encrypted = encrypt_ecb(message, key)
     base64_encoded = base64.b64encode(encrypted).decode()
-    return base64_encoded, True
+    return base64_encoded
 
 #*####################################################################################*#
 
 #*################################ Decryption Logic ##################################*#
 def unpad_message(padded_message): #* Remove PKCS#7 padding.
-    padding_len = padded_message[-1]
-    
-    if not (1 <= padding_len <= 16):
-        print("Invalid Padding Length")
-        
+    padding_len = padded_message[-1]        
     return padded_message[:-padding_len]
 
 def inv_mix_columns(state):
@@ -236,7 +225,7 @@ def decrypt(encrypted, key):
     if isinstance(key, str):
         key = key.encode()
     if len(key) != 16:
-        return "Key must be exactly 16 bytes (128 bits) long.", False
+        return "Error: Key must be exactly 16 bytes (128 bits) long."
     
     #* Encrypted Message Validation
     try:
@@ -244,16 +233,16 @@ def decrypt(encrypted, key):
         if isinstance(encrypted, str) and re.match('^[A-Za-z0-9+/]+={0,2}$', encrypted) and len(encrypted) % 4 == 0: 
             encrypted = base64.b64decode(encrypted)
         else:
-            return "Invalid base64 encoded string.", False
+            return "Error: Invalid base64 encoded string."
         
     except Exception as e:
-        return f"Decoding error: {str(e)}", False
+        return f"Decoding error: {str(e)}"
 
     #* Continue with Decryption
     try:
         decrypted = decrypt_ecb(encrypted, key)
-        return decrypted.decode('utf-8'), True
+        return decrypted.decode('utf-8')
     except Exception as e:
-        return f"Decryption error: {str(e)}", False
+        return f"Decryption error: {str(e)}"
 
 #*####################################################################################*#
